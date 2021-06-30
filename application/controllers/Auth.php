@@ -29,6 +29,7 @@ class Auth extends CI_Controller
         $email = $this->input->post('email');
         $password = $this->input->post('password');
         $user = $this->db->get_where('user', ['email' => $email])->row_array();
+        $count =0;
 
         if ($user) {
             if ($user['is_active'] == 1) {
@@ -47,6 +48,7 @@ class Auth extends CI_Controller
                 } else {
                     $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Contraseña incorrecta! </strong>  <br> Por favor de ingresar la contraseña correcta. </div></center>');
                     redirect('auth');
+
                 }
             } else {
                 $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta inactivo! </strong> <br> Por favor de activarlo desde el correo que ingresaste. </div></center>');
