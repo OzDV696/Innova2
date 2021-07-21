@@ -26,34 +26,52 @@ class Auth extends CI_Controller
 
     private function _Iniciodesesion()
     {
+        date_default_timezone_set("America/Mexico_City");
         $email = $this->input->post('email');
         $password = $this->input->post('password');
         $user = $this->db->get_where('user', ['email' => $email])->row_array();
-        $count =0;
-
+        
+        
         if ($user) {
-            if ($user['is_active'] == 1) {
-                // checa el password
-                if (password_verify($password, $user['password'])) {
-                    $data = [
-                        'email' => $user['email'],
-                        'role_id' => $user['role_id']
-                    ];
-                    $this->session->set_userdata($data);
-                    if ($user['role_id'] == 1) {
-                        redirect('admin');
+                if ($user['is_active'] == 1 ) {
+                    $date = new DateTime();
+                    echo $date;
+                    if($user['fecha'] < $date){
+                        // checa el password
+                        if (password_verify($password, $user['password'])) {
+                            $data = [
+                                'email' => $user['email'],
+                                'role_id' => $user['role_id']
+                            ];
+                            $this->session->set_userdata($data);
+                            if ($user['role_id'] == 1) {
+                                redirect('admin');
+                            } else {
+                                redirect('user');
+                            }
+                        } else {
+                            $date->modify('+1minute');
+                            $this->db->set('count', 'count+1', FALSE);
+                            $this->db->set('fecha', $date->format('Y-m-d H:i:s'));
+                            $this->db->where('id', $user['id']);
+                            $this->db->update('user');
+                            if($user['count']+1 == 3){
+                                $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Te haz equivocado 3 veces! </strong>  <br> Por favor de revisar los datos de autenticacion. </div></center>');
+                            redirect('auth');
+                            }
+                            
+                            $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Contraseña incorrecta! </strong>  <br> Por favor de ingresar la contraseña correcta. </div></center>');
+                            redirect('auth');
+                            
+                        }
                     } else {
-                        redirect('user');
-                    }
+                        $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta suspendido! </strong> <br> Por favor espera un poco a que se reactive tu cuenta. </div></center>');
+                        redirect('auth');
+                    }      
                 } else {
-                    $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Contraseña incorrecta! </strong>  <br> Por favor de ingresar la contraseña correcta. </div></center>');
+                    $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta inactivo! </strong> <br> Por favor de activarlo desde el correo que ingresaste. </div></center>');
                     redirect('auth');
-
                 }
-            } else {
-                $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta inactivo! </strong> <br> Por favor de activarlo desde el correo que ingresaste. </div></center>');
-                redirect('auth');
-            }
         } else {
             $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es inexistente! </strong> <br> Favor de registrarse. </div></center>');
             redirect('auth');
