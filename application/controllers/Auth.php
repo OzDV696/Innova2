@@ -34,11 +34,11 @@ class Auth extends CI_Controller
         
         if ($user) {
                 if ($user['is_active'] == 1 ) {
-                    $date = new DateTime();
-                    echo $date;
+                    $date = date("Y-m-d H:i:s");
                     if($user['fecha'] < $date){
-                        // checa el password
+                            // checa el password
                         if (password_verify($password, $user['password'])) {
+                            $this->db->set('count', 'count=0', FALSE);
                             $data = [
                                 'email' => $user['email'],
                                 'role_id' => $user['role_id']
@@ -50,13 +50,25 @@ class Auth extends CI_Controller
                                 redirect('user');
                             }
                         } else {
-                            $date->modify('+1minute');
+                            $date = date("Y-m-d H:i:s",strtotime(date("Y-m-d H:i:s")." +1 minutes"));
                             $this->db->set('count', 'count+1', FALSE);
-                            $this->db->set('fecha', $date->format('Y-m-d H:i:s'));
+                            $this->db->set('fecha', $date);
                             $this->db->where('id', $user['id']);
                             $this->db->update('user');
                             if($user['count']+1 == 3){
+                                $date = date("Y-m-d H:i:s",strtotime(date("Y-m-d H:i:s")." +30 minutes"));
+                                $this->db->set('fecha', $date);
+                                $this->db->where('id', $user['id']);
+                                $this->db->update('user');
                                 $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Te haz equivocado 3 veces! </strong>  <br> Por favor de revisar los datos de autenticacion. </div></center>');
+                            redirect('auth');
+                            }
+                            if($user['count']+1 == 5){
+                                $date = date("Y-m-d H:i:s",strtotime(date("Y-m-d H:i:s")." +3 years"));
+                                $this->db->set('fecha', $date);
+                                $this->db->where('id', $user['id']);
+                                $this->db->update('user');
+                                $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡Te haz equivocado 5 veces! </strong>  <br> Contactar al administrador. </div></center>');
                             redirect('auth');
                             }
                             
@@ -64,9 +76,9 @@ class Auth extends CI_Controller
                             redirect('auth');
                             
                         }
-                    } else {
-                        $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta suspendido! </strong> <br> Por favor espera un poco a que se reactive tu cuenta. </div></center>');
-                        redirect('auth');
+                    }else{
+                        $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta inactivo! </strong> <br> No ha transcurrido el tiempo necesario. </div></center>');
+                    redirect('auth');
                     }      
                 } else {
                     $this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"> <button type="button" class="close" data-dismiss="alert">&times;</button><center><strong>¡El correo es esta inactivo! </strong> <br> Por favor de activarlo desde el correo que ingresaste. </div></center>');
